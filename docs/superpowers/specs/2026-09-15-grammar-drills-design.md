@@ -85,7 +85,9 @@ comma, except for *nämlich*, where clause B starts a new sentence. The order pa
 Accepted orders: Konjunktor → inert; Adverbkonnektor → invert **and** hide
 (*ich komme deshalb nicht mit* is correct); Subjunktor → kick; Konnektivpartikel → hide.
 Distractors are the patterns that are not accepted, minus these grammatical-but-different-meaning
-exceptions: `hide` for *aber* and *denn* (particle use), and `invert` for *da* (adverb *da*).
+exceptions: `hide` for *aber* and *denn* (particle use), and `invert` + `hide` for *da* and
+*damit* (adverbs *da* "there" and *damit* "with it"). Choose shows the correct order plus up
+to 3 distractors.
 
 ## Progress and weighting
 
@@ -123,11 +125,13 @@ Drill interface:
 
 ```ts
 interface Drill<Item> {
-  id: string; title: string;
-  cells(filter?): string[];
-  stages: number;
+  id: string; title: string; description: string;
+  stageNames: readonly string[];          // recognition first
+  filters: readonly FilterDef[];
+  cells(selection?: FilterSelection): string[];
+  cellLabel(cellId: string): string;
   generate(cellId: string, stage: number, rng: Rng): Item;
-  view: (host: HTMLElement, item: Item, done: (r: AnswerResult) => void) => void;
+  view(host: HTMLElement, item: Item, ctx: { answered(score): void; next(): void; signal: AbortSignal }): void;
 }
 ```
 
@@ -150,4 +154,5 @@ highlighted, connector highlighted.
 - Sentence bank: every connector has ≥ 2 sentences, and no distractor renders identically
   to an accepted order.
 - Unit tests for weighting, promotion/demotion and store migration/reset.
-- The UI is checked manually in the browser.
+- UI flow: jsdom test plays a full 20-item session of each drill at every stage. Visuals
+  checked manually in the browser (light/dark, 400px width).
