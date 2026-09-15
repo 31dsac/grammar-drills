@@ -1,5 +1,5 @@
 import { DER_WORDS, EIN_WORDS, declineArticle, type ArticleWord } from '../../grammar/articles';
-import { adjectiveEnding, explainEnding } from '../../grammar/endings';
+import { adjectiveEnding, explainEnding, normalizeEnding } from '../../grammar/endings';
 import { ADJECTIVES, FRAMES, NOUNS, isMass, nounForm, type Frame, type Noun } from '../../grammar/lexicon';
 import {
   ARTICLE_TYPES,
@@ -145,7 +145,7 @@ export function generate(id: string, stage: number, rng: Rng): AdjItem {
 
 /** Typed answers: case/whitespace-insensitive; "-en", "en" and "kleinen" all accepted. */
 export function checkTyped(item: AdjItem, answer: string): boolean {
-  const a = answer.trim().toLowerCase().replace(/^-/, '');
+  const a = normalizeEnding(answer);
   return a === item.ending || a === (item.stem + item.ending).toLowerCase();
 }
 

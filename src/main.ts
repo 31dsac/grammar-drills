@@ -4,9 +4,13 @@ import { ProgressStore } from './progress/store';
 import { renderHome } from './ui/home';
 import { runSession } from './ui/session';
 import { renderStats } from './ui/stats';
+import { renderTablePanel } from './ui/table';
+import { mountTabs } from './ui/tabs';
 
 const app = document.querySelector<HTMLElement>('#app');
-if (!app) throw new Error('#app missing');
+const tablePanel = document.querySelector<HTMLElement>('#table-panel');
+const tabs = document.querySelector<HTMLElement>('#tabs');
+if (!app || !tablePanel || !tabs) throw new Error('app shell missing');
 
 const store = new ProgressStore(window.localStorage);
 
@@ -23,3 +27,12 @@ function start(drill: Drill<unknown>, cells: string[]): void {
 }
 
 home();
+renderTablePanel(tablePanel, window.localStorage);
+mountTabs(
+  tabs,
+  [
+    { id: 'sentences', label: 'Sentences', el: app, usesGlobalKeys: true },
+    { id: 'table', label: 'Table', el: tablePanel },
+  ],
+  window.localStorage,
+);

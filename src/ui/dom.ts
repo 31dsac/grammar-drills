@@ -38,6 +38,13 @@ export function clear(el: Element): void {
   el.replaceChildren();
 }
 
+let keysSuspended = false;
+
+/** While another panel is showing, the sentence drill's document-level shortcuts stay quiet. */
+export function suspendKeys(suspended: boolean): void {
+  keysSuspended = suspended;
+}
+
 /**
  * Keyboard handler bound to the current item. Registered on the next tick so the key press
  * that submitted an answer does not also trigger the "next" shortcut.
@@ -48,7 +55,7 @@ export function onKeys(signal: AbortSignal, handler: (e: KeyboardEvent) => void)
     document.addEventListener(
       'keydown',
       (e) => {
-        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (keysSuspended || e.ctrlKey || e.metaKey || e.altKey) return;
         handler(e);
       },
       { signal },

@@ -25,6 +25,13 @@ Progress is saved in this browser's localStorage. Clearing site data resets it.
 A cell moves up a stage at ≥ 80% over its last 8–10 answers and drops back below 50% over
 its last 6. Hinted answers count half.
 
+## Table
+
+The **Table** tab is a whole-table drill: fill in the 4 × 4 adjective-ending table for
+der-words (weak), ein-words (mixed) or no article (strong), press **Check** (or `Enter`),
+then **Retry wrong** or **Reset**. Only the first Check of a fresh grid is recorded, as
+last / best / recent scores per table. It does not affect the sentence drills' stages.
+
 Keyboard: `1`–`5` answer, `?` hint, `Enter` submit/next, `Backspace` undo a tile.
 
 ## Develop
@@ -38,7 +45,9 @@ npm run build
 - `src/grammar/`: pure data and rules (ending table, articles, lexicon, connectors, sentences)
 - `src/drills/`: one folder per drill, `logic.ts` (pure) + `view.ts` (DOM), registered in `registry.ts`
 - `src/progress/`: store, mastery (promotion/demotion), weighting
-- `src/ui/`: home, session, stats
+- `src/tables/`: ending-table grading and score history (pure)
+- `src/ui/`: tabs, home, session, stats, table panel
 
 To add a drill: implement `Drill<Item>` from `src/drills/drill.ts` and add it to `DRILLS`.
-Design spec: `docs/superpowers/specs/2026-09-15-grammar-drills-design.md`.
+Design specs: `docs/superpowers/specs/2026-09-15-grammar-drills-design.md`,
+`docs/superpowers/specs/2026-09-15-ending-table-panel-design.md`.

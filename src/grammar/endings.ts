@@ -76,3 +76,8 @@ export function explainEnding(type: ArticleType, c: Case, g: Gender): string {
   }
   return 'ein has no ending here, so the adjective has to show neuter itself: -es, like das.';
 }
+
+/** How a typed ending is compared: trimmed, lower-case, one leading hyphen dropped. */
+export function normalizeEnding(answer: string): string {
+  return answer.trim().toLowerCase().replace(/^-/, '');
+}
