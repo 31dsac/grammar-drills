@@ -80,6 +80,7 @@ comma, except for *nämlich*, where clause B starts a new sentence. The order pa
 - `invert`: conn V S rest nonfinite
 - `kick`: conn S rest nonfinite V
 - `hide`: S V conn rest nonfinite
+- `late`: S conn rest nonfinite V (wrong for every class; pads the choose options)
 
 Accepted orders: Konjunktor → inert; Adverbkonnektor → invert **and** hide
 (*ich komme deshalb nicht mit* is correct); Subjunktor → kick; Konnektivpartikel → hide.
@@ -130,7 +131,9 @@ interface Drill<Item> {
 }
 ```
 
-A session is 20 items. The adjective drill has case and article-type filters. The stats
+A session is 20 items. The adjective drill has case and article-type filters; the connector
+drill filters by class. Filter choices are remembered per browser (separate localStorage key,
+safe to lose). The stats
 page shows a 4 × 4 heatmap per article type (accuracy colour and stage) plus a connector
 table.
 
