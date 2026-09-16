@@ -7,7 +7,7 @@ Companion to the study workspace at `F:\Claude\Grammar`, but fully separate.
 
 ## Run
 
-Hosted at <https://YOUR-USERNAME.github.io/grammar-drills/> — open it on any device, nothing to
+Hosted at <https://31dsac.github.io/grammar-drills/> — open it on any device, nothing to
 install. To run it locally instead, double-click `start.cmd`, or:
 
 ```
@@ -57,12 +57,12 @@ npm run build
 - `src/ui/`: tabs, home, session, stats, table panel
 
 To add a drill: implement `Drill<Item>` from `src/drills/drill.ts` and add it to `DRILLS`.
+Design specs: `docs/superpowers/specs/2026-09-15-grammar-drills-design.md`,
+`docs/superpowers/specs/2026-09-15-ending-table-panel-design.md`,
+`docs/superpowers/specs/2026-09-16-paradigm-tables-design.md`.
 
 ## Deploy
 
 Every push to `main` runs the tests and typecheck, then publishes `dist/` to GitHub Pages via
 `.github/workflows/deploy.yml`. A red build does not deploy. `vite.config.ts` sets `base: './'`
 so the build works under any URL prefix.
-Design specs: `docs/superpowers/specs/2026-09-15-grammar-drills-design.md`,
-`docs/superpowers/specs/2026-09-15-ending-table-panel-design.md`,
-`docs/superpowers/specs/2026-09-16-paradigm-tables-design.md`.
