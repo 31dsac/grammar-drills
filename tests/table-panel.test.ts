@@ -1,9 +1,8 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest';
-import { adjectiveEnding } from '../src/grammar/endings';
-import type { ArticleType, Case, Gender } from '../src/grammar/types';
 import type { KeyValueStorage } from '../src/progress/store';
-import { CELL_KEYS, TABLE_HISTORY_KEY, parseHistory } from '../src/tables/logic';
+import { findTable } from '../src/tables/catalog';
+import { TABLE_CHOICE_KEY, TABLE_HISTORY_KEY, gradeGrid, parseHistory } from '../src/tables/logic';
 import { renderTablePanel } from '../src/ui/table';
 
 class MemoryStorage implements KeyValueStorage {
@@ -22,41 +21,54 @@ const button = (label: string) => qa<HTMLButtonElement>('button').find((b) => b.
 const inputs = () => qa<HTMLInputElement>('.cell-input');
 const history = (s: MemoryStorage) => parseHistory(s.getItem(TABLE_HISTORY_KEY));
 
-function fill(type: ArticleType, overrides: Record<string, string> = {}): void {
+/** Fill every cell with its right form, except the overrides (keyed row|col). */
+function fill(tableId: string, overrides: Record<string, string> = {}): void {
+  const cells = gradeGrid(findTable(tableId)!, {}).cells;
   inputs().forEach((input, i) => {
-    const key = CELL_KEYS[i]!;
-    const [c, g] = key.split('|') as [Case, Gender];
-    input.value = overrides[key] ?? adjectiveEnding(type, c, g);
+    const cell = cells[i]!;
+    input.value = overrides[cell.key] ?? cell.expected;
   });
 }
 
+function choose(id: string): void {
+  const radio = q<HTMLInputElement>(`input[name="table-choice"][value="${id}"]`);
+  radio.checked = true;
+  radio.dispatchEvent(new Event('change'));
+}
+
 let storage: MemoryStorage;
-beforeEach(() => {
+function render(): void {
   document.body.innerHTML = '<section id="table-panel"></section>';
-  storage = new MemoryStorage();
   renderTablePanel(q('#table-panel'), storage);
+}
+
+beforeEach(() => {
+  storage = new MemoryStorage();
+  render();
 });
 
-describe('ending table panel', () => {
-  it('renders a 4 × 4 grid defaulting to the weak table', () => {
+describe('paradigm table panel', () => {
+  it('defaults to the weak adjective-ending table', () => {
     expect(inputs()).toHaveLength(16);
-    expect(q<HTMLInputElement>('input[name="table-type"]:checked').value).toBe('definite');
+    expect(q<HTMLInputElement>('input[name="table-choice"]:checked').value).toBe('adj-weak');
+    expect(q('.table-heading').textContent).toBe('Adjective endings · der-word · weak');
     expect(q('.grid-history').textContent).toBe('No attempts yet');
+    expect(qa('.table-picker legend').map((l) => l.textContent)).toEqual(['Adjective endings', 'Articles', 'Pronouns']);
   });
 
   it('a perfect grid scores 16/16 and records one attempt', () => {
-    fill('definite');
+    fill('adj-weak');
     button('Check').click();
     expect(q('.grid-score').textContent).toBe('16 / 16');
     expect(qa('td.is-correct')).toHaveLength(16);
     expect(button('Retry wrong').hidden).toBe(true);
     expect(button('Check').disabled).toBe(true);
-    expect(history(storage).definite).toEqual({ attempts: 1, best: 16, recent: [16] });
+    expect(history(storage)['adj-weak']).toEqual({ attempts: 1, best: 16, recent: [16] });
     expect(q('.grid-history').textContent).toBe('Last 16/16 · Best 16/16 · 1 attempt');
   });
 
   it('Enter checks; Retry clears only wrong cells; re-checking does not record', () => {
-    fill('definite', { 'nom|m': 'er', 'gen|pl': '' });
+    fill('adj-weak', { 'nom|m': 'er', 'gen|pl': '' });
     inputs()[3]!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
 
     expect(q('.grid-score').textContent).toBe('14 / 16');
@@ -66,44 +78,63 @@ describe('ending table panel', () => {
     expect(inputs().every((i) => i.readOnly)).toBe(true);
 
     button('Retry wrong').click();
-    const [first, , , , , , , , , , , , , , , last] = inputs();
-    expect(first!.value).toBe('');
-    expect(first!.readOnly).toBe(false);
-    expect(last!.value).toBe('');
+    const first = inputs()[0]!;
+    const last = inputs()[15]!;
+    expect(first.value).toBe('');
+    expect(first.readOnly).toBe(false);
+    expect(last.value).toBe('');
     expect(inputs()[1]!.value).toBe('e');
     expect(inputs()[1]!.readOnly).toBe(true);
     expect(qa('td.is-correct')).toHaveLength(14);
     expect(qa('td.is-wrong')).toHaveLength(0);
     expect(document.activeElement).toBe(first);
 
-    first!.value = 'e';
-    last!.value = '-en';
+    first.value = 'e';
+    last.value = '-en';
     button('Check').click();
     expect(q('.grid-score').textContent).toBe('16 / 16');
-    expect(history(storage).definite).toEqual({ attempts: 1, best: 14, recent: [14] });
+    expect(history(storage)['adj-weak']).toEqual({ attempts: 1, best: 14, recent: [14] });
   });
 
   it('Reset starts a fresh attempt that is recorded again', () => {
-    fill('definite');
+    fill('adj-weak');
     button('Check').click();
     button('Reset').click();
     expect(inputs().every((i) => i.value === '' && !i.readOnly)).toBe(true);
     expect(qa('td.is-correct')).toHaveLength(0);
     expect(q('.grid-score').textContent).toBe('');
-    fill('definite', { 'dat|m': 'em' });
+    fill('adj-weak', { 'dat|m': 'em' });
     button('Check').click();
-    expect(history(storage).definite).toEqual({ attempts: 2, best: 16, recent: [16, 15] });
+    expect(history(storage)['adj-weak']).toEqual({ attempts: 2, best: 16, recent: [16, 15] });
   });
 
-  it('switching article type clears the grid and grades the new table', () => {
-    fill('definite');
-    const none = q<HTMLInputElement>('input[name="table-type"][value="none"]');
-    none.checked = true;
-    none.dispatchEvent(new Event('change'));
+  it('switching table rebuilds the grid, records under the new id, and is remembered', () => {
+    fill('adj-weak');
+    choose('rel');
+    expect(q('.table-heading').textContent).toBe('Pronouns · relative');
+    expect(inputs()).toHaveLength(16);
     expect(inputs().every((i) => i.value === '')).toBe(true);
-    fill('none');
+
+    fill('rel', { 'dat|pl': 'den' });
     button('Check').click();
-    expect(q('.grid-score').textContent).toBe('16 / 16');
-    expect(history(storage)).toEqual({ none: { attempts: 1, best: 16, recent: [16] } });
+    expect(q('.grid-score').textContent).toBe('15 / 16');
+    expect(q('td.is-wrong .correction').textContent).toBe('denen');
+    expect(history(storage)).toEqual({ rel: { attempts: 1, best: 15, recent: [15] } });
+    expect(storage.getItem(TABLE_CHOICE_KEY)).toBe('rel');
+
+    render();
+    expect(q<HTMLInputElement>('input[name="table-choice"]:checked').value).toBe('rel');
+    expect(q('.grid-history').textContent).toBe('Last 15/16 · Best 15/16 · 1 attempt');
+  });
+
+  it('pronoun table has 36 cells and requires the capital in Ihnen', () => {
+    choose('pers');
+    expect(inputs()).toHaveLength(36);
+    expect(q('.paradigm-grid').classList.contains('words')).toBe(true);
+    fill('pers', { 'Sie|dat': 'ihnen', 'ich|akk': 'MICH' });
+    button('Check').click();
+    expect(q('.grid-score').textContent).toBe('35 / 36');
+    expect(qa('td.is-wrong')).toHaveLength(1);
+    expect(q('td.is-wrong .correction').textContent).toBe('Ihnen');
   });
 });

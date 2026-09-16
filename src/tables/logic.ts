@@ -1,18 +1,34 @@
-import { adjectiveEnding, normalizeEnding } from '../grammar/endings';
-import { ARTICLE_TYPES, CASES, GENDERS, type ArticleType, type Case, type Ending, type Gender } from '../grammar/types';
+import { normalizeEnding } from '../grammar/endings';
 import type { KeyValueStorage } from '../progress/store';
+import { TABLES, findTable, type AnswerMode, type ParadigmTable } from './catalog';
 
-/** One cell of an ending table, e.g. "dat|f". */
-export type CellKey = `${Case}|${Gender}`;
+export function cellKey(row: string, col: string): string {
+  return `${row}|${col}`;
+}
 
-/** Row by row: Nominativ m f n pl, then Akkusativ … */
-export const CELL_KEYS: readonly CellKey[] = CASES.flatMap((c) => GENDERS.map((g): CellKey => `${c}|${g}`));
-export const CELL_COUNT = CELL_KEYS.length;
+/** Row by row, left to right. */
+export function cellKeys(table: ParadigmTable): string[] {
+  return table.rows.flatMap((r) => table.cols.map((c) => cellKey(r.key, c.key)));
+}
+
+export function cellCount(table: ParadigmTable): number {
+  return table.rows.length * table.cols.length;
+}
+
+/**
+ * Endings: trimmed, lower-case, one leading hyphen dropped.
+ * Words: trimmed; case does not matter unless the form is capitalised (Sie, Ihnen).
+ */
+export function isCorrect(mode: AnswerMode, answer: string, expected: string): boolean {
+  if (mode === 'ending') return normalizeEnding(answer) === expected;
+  const a = answer.trim();
+  return expected === expected.toLowerCase() ? a.toLowerCase() === expected : a === expected;
+}
 
 export interface CellResult {
-  key: CellKey;
+  key: string;
   answer: string;
-  expected: Ending;
+  expected: string;
   correct: boolean;
 }
 
@@ -21,19 +37,22 @@ export interface GridResult {
   score: number;
 }
 
-export function gradeGrid(type: ArticleType, answers: Partial<Record<CellKey, string>>): GridResult {
-  const cells = CELL_KEYS.map((key) => {
-    const [c, g] = key.split('|') as [Case, Gender];
-    const expected = adjectiveEnding(type, c, g);
-    const answer = answers[key] ?? '';
-    return { key, answer, expected, correct: normalizeEnding(answer) === expected };
-  });
+export function gradeGrid(table: ParadigmTable, answers: Readonly<Record<string, string>>): GridResult {
+  const cells = table.rows.flatMap((r) =>
+    table.cols.map((c) => {
+      const key = cellKey(r.key, c.key);
+      const expected = table.expected(r.key, c.key);
+      const answer = answers[key] ?? '';
+      return { key, answer, expected, correct: isCorrect(table.mode, answer, expected) };
+    }),
+  );
   return { cells, score: cells.filter((c) => c.correct).length };
 }
 
-// ---------- History: a per-browser convenience, separate from sentence-drill progress ----------
+// ---------- History and choice: per-browser conveniences, separate from sentence-drill progress ----------
 
 export const TABLE_HISTORY_KEY = 'grammar-drills:tables';
+export const TABLE_CHOICE_KEY = 'grammar-drills:table-choice';
 export const RECENT_LIMIT = 10;
 
 export interface TableRecord {
@@ -43,7 +62,14 @@ export interface TableRecord {
   recent: number[];
 }
 
-export type TableHistory = Partial<Record<ArticleType, TableRecord>>;
+export type TableHistory = Record<string, TableRecord>;
+
+/** The first version keyed history by article type. */
+const LEGACY_IDS: Readonly<Record<string, string>> = {
+  definite: 'adj-weak',
+  indefinite: 'adj-mixed',
+  none: 'adj-strong',
+};
 
 export function recordAttempt(record: TableRecord | undefined, score: number): TableRecord {
   const prev = record ?? { attempts: 0, best: 0, recent: [] };
@@ -54,10 +80,9 @@ export function recordAttempt(record: TableRecord | undefined, score: number): T
   };
 }
 
-const isScore = (x: unknown): boolean => Number.isInteger(x) && (x as number) >= 0 && (x as number) <= CELL_COUNT;
-
-function parseRecord(x: unknown): TableRecord | undefined {
+function parseRecord(x: unknown, max: number): TableRecord | undefined {
   if (typeof x !== 'object' || x === null) return undefined;
+  const isScore = (s: unknown) => Number.isInteger(s) && (s as number) >= 0 && (s as number) <= max;
   const { attempts, best, recent } = x as Record<string, unknown>;
   if (!Number.isInteger(attempts) || (attempts as number) < 1) return undefined;
   if (!isScore(best) || !Array.isArray(recent) || !recent.every(isScore)) return undefined;
@@ -70,9 +95,12 @@ export function parseHistory(raw: string | null): TableHistory {
     const data: unknown = JSON.parse(raw);
     if (typeof data !== 'object' || data === null || Array.isArray(data)) return {};
     const history: TableHistory = {};
-    for (const type of ARTICLE_TYPES) {
-      const record = parseRecord((data as Record<string, unknown>)[type]);
-      if (record) history[type] = record;
+    for (const [id, value] of Object.entries(data)) {
+      const table = findTable(LEGACY_IDS[id] ?? id);
+      const record = table && parseRecord(value, cellCount(table));
+      if (!table || !record) continue;
+      // A current id always wins over a legacy one.
+      if (id === table.id || !(table.id in history)) history[table.id] = record;
     }
     return history;
   } catch {
@@ -96,14 +124,33 @@ export function saveHistory(storage: KeyValueStorage, history: TableHistory): vo
   }
 }
 
-export function historyLine(record: TableRecord | undefined): string {
+export function historyLine(record: TableRecord | undefined, total: number): string {
   if (!record) return 'No attempts yet';
   const last = record.recent.at(-1) ?? 0;
   const parts = [
-    `Last ${last}/${CELL_COUNT}`,
-    `Best ${record.best}/${CELL_COUNT}`,
+    `Last ${last}/${total}`,
+    `Best ${record.best}/${total}`,
     `${record.attempts} attempt${record.attempts === 1 ? '' : 's'}`,
   ];
   if (record.recent.length > 1) parts.push(`Recent ${record.recent.join(' ')}`);
   return parts.join(' · ');
+}
+
+/** The remembered table, or the first one. */
+export function loadChoice(storage: KeyValueStorage): string {
+  let id: string | null = null;
+  try {
+    id = storage.getItem(TABLE_CHOICE_KEY);
+  } catch {
+    // ignore
+  }
+  return findTable(id ?? '')?.id ?? TABLES[0]!.id;
+}
+
+export function saveChoice(storage: KeyValueStorage, id: string): void {
+  try {
+    storage.setItem(TABLE_CHOICE_KEY, id);
+  } catch {
+    // ignore
+  }
 }

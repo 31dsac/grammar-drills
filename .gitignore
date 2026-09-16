@@ -1,2 +1,15 @@
 node_modules/
 dist/
+
+# Local tool + editor state
+.impeccable/
+.vite/
+*.local
+.vscode/
+.idea/
+
+# Google Drive / OS clutter (this folder syncs through Drive)
+desktop.ini
+.tmp.drive*
+.DS_Store
+Thumbs.db
