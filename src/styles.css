@@ -455,6 +455,29 @@ kbd {
   border-radius: 0;
 }
 
+.vp-input {
+  width: 4.5ch;
+}
+
+.vp-input.wide {
+  width: 9ch;
+}
+
+.translation {
+  margin: 0;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.vp-sentence .blank {
+  margin: 0 0.2em;
+}
+
+.sentence.vp-sentence {
+  font-size: 1.6rem;
+  margin-bottom: 8px;
+}
+
 .hint {
   margin: 16px 0 0;
   display: flex;
@@ -481,7 +504,8 @@ kbd {
   font-size: 1.05rem;
 }
 
-.endings .btn.choice {
+.endings .btn.choice,
+.preps .btn.choice {
   min-width: 76px;
   justify-content: center;
 }
@@ -701,7 +725,8 @@ kbd {
 }
 
 .heatmap td,
-.conn-list li {
+.conn-list li,
+.vp-list li {
   background: var(--heat, var(--surface-2));
   border-radius: 5px;
   text-align: center;
@@ -738,7 +763,8 @@ kbd {
   margin-left: 8px;
 }
 
-.conn-list {
+.conn-list,
+.vp-list {
   list-style: none;
   padding: 0;
   margin: 8px 0 0;
@@ -747,14 +773,20 @@ kbd {
   gap: 4px;
 }
 
-.conn-list li {
+.conn-list li,
+.vp-list li {
   height: auto;
   padding: 6px 4px;
 }
 
-.conn-list .de {
+.conn-list .de,
+.vp-list .de {
   display: block;
   font: 1rem var(--serif);
+}
+
+.vp-list {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
 }
 
 /* ---------- Ending table ---------- */
@@ -889,6 +921,21 @@ kbd {
   margin-top: 0;
 }
 
+.paradigm-grid.long-rows thead th:first-child {
+  width: 52%;
+}
+
+.paradigm-grid th[scope='row'] .de {
+  display: block;
+  font: 1rem/1.25 var(--serif);
+}
+
+.row-sub {
+  display: block;
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
 @media (max-width: 480px) {
   .paradigm-grid.words .cell-input {
     font-size: 1rem;
@@ -910,6 +957,9 @@ kbd {
   }
   .phrase {
     font-size: 1.5rem;
+  }
+  .sentence.vp-sentence {
+    font-size: 1.3rem;
   }
   .connector-word {
     font-size: 2rem;

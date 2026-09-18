@@ -46,7 +46,7 @@ shortcuts through `onKeys()` in `ui/dom.ts`. When a panel without `usesGlobalKey
 session item. Any new document-level key handler must go through `onKeys`.
 
 **Layering.** `src/grammar/` holds pure rule data: ending tables, `declineArticle`, pronouns,
-lexicon, connectors, sentence bank. It is the **single source of truth for forms**. Everything
+lexicon, connectors, sentence bank, verb + preposition pairs (with their own sentence bank). It is the **single source of truth for forms**. Everything
 else derives from it. Tests carry *independently written* reference tables and strings. Keep them
 independent, and never compute expected values in a test from `src/grammar`.
 
@@ -69,7 +69,8 @@ independent, and never compute expected values in a test from `src/grammar`.
 - Adding a grid means one catalog entry plus one reference line in `tests/tables.test.ts`.
 - Answer rules: endings are lower-cased and a leading `-` is stripped (the same
   `normalizeEnding` the typed sentence stage uses). Words ignore case unless the correct form is
-  capitalised (*Sie, Ihnen*).
+  capitalised (*Sie, Ihnen*). A table's optional `accepts(row, col)` adds more right answers
+  (the verb tables take `a`/`d` for the case).
 - Only the first Check of a fresh grid is recorded.
 
 **Persistence** is localStorage only, per browser and per device, with nothing synced:
@@ -99,5 +100,6 @@ Changing the shape of `v1` needs a version bump and migration in `progress/store
 ## Docs
 
 Design specs are in `docs/superpowers/specs/` and implementation plans in `docs/superpowers/plans/`.
-There's one spec per feature: v1 drills, the ending-table panel, and paradigm tables. Read the
+There's one spec per feature: v1 drills, the ending-table panel, paradigm tables, and verbs with
+prepositions. Read the
 relevant spec before changing a feature's behaviour, and update it when behaviour changes.

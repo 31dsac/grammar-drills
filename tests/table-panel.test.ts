@@ -53,7 +53,7 @@ describe('paradigm table panel', () => {
     expect(q<HTMLInputElement>('input[name="table-choice"]:checked').value).toBe('adj-weak');
     expect(q('.table-heading').textContent).toBe('Adjective endings · der-word · weak');
     expect(q('.grid-history').textContent).toBe('No attempts yet');
-    expect(qa('.table-picker legend').map((l) => l.textContent)).toEqual(['Adjective endings', 'Articles', 'Pronouns']);
+    expect(qa('.table-picker legend').map((l) => l.textContent)).toEqual(['Adjective endings', 'Articles', 'Pronouns', 'Verbs + preposition']);
   });
 
   it('a perfect grid scores 16/16 and records one attempt', () => {

@@ -1,7 +1,8 @@
 import { maxStage } from '../drills/drill';
-import { adjectiveEndings, connectorPosition } from '../drills/registry';
+import { adjectiveEndings, connectorPosition, verbPrepositions } from '../drills/registry';
 import { cellId } from '../drills/adjective-endings/logic';
 import { CLASS_INFO, CONNECTORS, CONNECTOR_CLASSES } from '../grammar/connectors';
+import { PREPS, VERB_PREPS, vpId } from '../grammar/verb-prepositions';
 import { ARTICLE_TYPES, ARTICLE_TYPE_NAMES, CASES, CASE_NAMES, GENDERS } from '../grammar/types';
 import { recentAccuracy, type CellStats } from '../progress/mastery';
 import type { ProgressStore } from '../progress/store';
@@ -99,6 +100,32 @@ export function renderStats(host: HTMLElement, store: ProgressStore, back: () =>
     ),
   );
 
+  const vpStats = store.cells(verbPrepositions.id);
+  const vpGroups = PREPS.map((prep) => VERB_PREPS.filter((e) => e.prep === prep))
+    .filter((entries) => entries.length > 0)
+    .map((entries) => {
+      const prep = entries[0]!.prep;
+      const cases = [...new Set(entries.map((e) => CASE_NAMES[e.case].slice(0, 3)))].join(' · ');
+      return h(
+        'div',
+        { class: 'conn-group' },
+        h('h3', null, de(prep), h('small', null, cases)),
+        h(
+          'ul',
+          { class: 'vp-list' },
+          ...entries.map((e) => {
+            const st = vpStats[vpId(e)];
+            return h(
+              'li',
+              { style: heat(st), class: st?.attempts ? 'seen' : 'unseen', title: st ? `${st.attempts} attempts` : 'not practised' },
+              de(`${e.verb} ${e.prep}`),
+              ...cellText(st, verbPrepositions.stageNames),
+            );
+          }),
+        ),
+      );
+    });
+
   const stageLegend = (names: readonly string[], max: number) =>
     `Stages: ${names.map((n, i) => (i === max ? `${n} (last)` : n)).join(' → ')}. Percent = accuracy at the current stage.`;
 
@@ -120,6 +147,13 @@ export function renderStats(host: HTMLElement, store: ProgressStore, back: () =>
         h('div', { class: 'section-head' }, h('h2', null, connectorPosition.title), resetButton(store, connectorPosition.id, connectorPosition.title, rerender)),
         h('p', { class: 'note' }, stageLegend(connectorPosition.stageNames, maxStage(connectorPosition))),
         h('div', { class: 'conn-groups' }, ...connGroups),
+      ),
+      h(
+        'section',
+        { class: 'card' },
+        h('div', { class: 'section-head' }, h('h2', null, verbPrepositions.title), resetButton(store, verbPrepositions.id, verbPrepositions.title, rerender)),
+        h('p', { class: 'note' }, stageLegend(verbPrepositions.stageNames, maxStage(verbPrepositions))),
+        h('div', { class: 'conn-groups' }, ...vpGroups),
       ),
     ),
   );

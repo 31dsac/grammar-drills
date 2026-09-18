@@ -43,7 +43,8 @@ export function gradeGrid(table: ParadigmTable, answers: Readonly<Record<string,
       const key = cellKey(r.key, c.key);
       const expected = table.expected(r.key, c.key);
       const answer = answers[key] ?? '';
-      return { key, answer, expected, correct: isCorrect(table.mode, answer, expected) };
+      const forms = [expected, ...(table.accepts?.(r.key, c.key) ?? [])];
+      return { key, answer, expected, correct: forms.some((f) => isCorrect(table.mode, answer, f)) };
     }),
   );
   return { cells, score: cells.filter((c) => c.correct).length };

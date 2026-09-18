@@ -9,6 +9,7 @@ import {
   type Person,
 } from '../grammar/pronouns';
 import { CASES, CASE_NAMES, GENDERS, GENDER_NAMES, type ArticleType, type Case, type Gender } from '../grammar/types';
+import { VERB_PREPS, findVerbPrep, vpId, type VerbCase, type VpSet } from '../grammar/verb-prepositions';
 
 /** ending: type -en, -em …   word: type the whole form. */
 export type AnswerMode = 'ending' | 'word';
@@ -18,6 +19,10 @@ export interface Axis {
   label: string;
   /** Full name, for hover and screen readers. */
   title?: string;
+  /** Second, smaller line under a row label. */
+  sub?: string;
+  /** The label is German (rendered blue). */
+  de?: boolean;
 }
 
 /** A paradigm to fill in from memory: one right form per row × column. */
@@ -30,6 +35,8 @@ export interface ParadigmTable {
   rows: readonly Axis[];
   cols: readonly Axis[];
   expected(row: string, col: string): string;
+  /** Other answers that also count, compared the same way as the expected form. */
+  accepts?(row: string, col: string): readonly string[];
 }
 
 const GENDER_HEADS: Record<Gender, string> = { m: 'masc.', f: 'fem.', n: 'neut.', pl: 'pl.' };
@@ -83,6 +90,33 @@ function pronounForm(row: string, col: string): string {
   }
 }
 
+const CASE_ANSWERS: Record<VerbCase, readonly string[]> = {
+  akk: ['a', 'akkusativ', 'accusative'],
+  dat: ['d', 'dativ', 'dative'],
+};
+
+const VERB_TABLE_LABELS: Record<VpSet, string> = { notes: 'from my notes', core: 'core B1/B2' };
+
+function verbTable(set: VpSet): ParadigmTable {
+  return {
+    id: `vp-${set}`,
+    group: 'Verbs + preposition',
+    label: VERB_TABLE_LABELS[set],
+    prompt: 'Type the preposition and its case: akk or dat (a / d is enough).',
+    mode: 'word',
+    rows: VERB_PREPS.filter((e) => e.set === set).map((e) => ({ key: vpId(e), label: e.verb, sub: e.gloss, de: true })),
+    cols: [
+      { key: 'prep', label: 'Präp.', title: 'preposition' },
+      { key: 'case', label: 'Kasus', title: 'case: akk or dat' },
+    ],
+    expected: (row, col) => {
+      const e = findVerbPrep(row);
+      return col === 'prep' ? e.prep : e.case;
+    },
+    accepts: (row, col) => (col === 'case' ? CASE_ANSWERS[findVerbPrep(row).case] : []),
+  };
+}
+
 export const TABLES: readonly ParadigmTable[] = [
   adjectiveTable('adj-weak', 'definite', 'der-word · weak', 'after a der-word (der, dieser)'),
   adjectiveTable('adj-mixed', 'indefinite', 'ein-word · mixed', 'after an ein-word (ein, kein, mein)'),
@@ -110,6 +144,8 @@ export const TABLES: readonly ParadigmTable[] = [
     cols: PRONOUN_COLS,
     expected: pronounForm,
   },
+  verbTable('notes'),
+  verbTable('core'),
 ];
 
 export const TABLE_GROUPS: readonly string[] = [...new Set(TABLES.map((t) => t.group))];

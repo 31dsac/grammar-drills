@@ -23,6 +23,9 @@ progress — nothing syncs between them. Clearing site data resets it.
 - **Adjective endings.** 48 cells (article type × case × gender). Stage *choose* → *type*.
 - **Connector position.** 29 connectors across the four classes from
   `Grammar/reference/konnektoren.html`. Stage *sort* → *choose* → *build*.
+- **Verbs + preposition.** 41 pairs (*warten auf, teilnehmen an*): 21 from the clipper note and
+  Lesson 6, 20 core B1/B2. Stage *choose* → *type* → *prep + case* (*auf den*). The English line
+  under each sentence tells *freuen auf* from *freuen über*.
 
 A cell moves up a stage at ≥ 80% over its last 8–10 answers and drops back below 50% over
 its last 6. Hinted answers count half.
@@ -34,6 +37,8 @@ The **Table** tab drills whole paradigms from memory:
 - **Adjective endings**: der-word (weak), ein-word (mixed), no article (strong)
 - **Articles**: der, dieser, kein
 - **Pronouns**: relative (der … dessen, denen, deren), personal · reflexive (Akk, Dat)
+- **Verbs + preposition**: from my notes, core B1/B2. Preposition and case per verb; case takes
+  `akk`/`dat` or just `a`/`d`
 
 Fill every cell, press **Check** (or `Enter`), then **Retry wrong** or **Reset**. Endings accept
 `-en` or `en`; whole words ignore capitals except where the form is capitalised (*Sie, Ihnen*).
@@ -59,7 +64,8 @@ npm run build
 To add a drill: implement `Drill<Item>` from `src/drills/drill.ts` and add it to `DRILLS`.
 Design specs: `docs/superpowers/specs/2026-09-15-grammar-drills-design.md`,
 `docs/superpowers/specs/2026-09-15-ending-table-panel-design.md`,
-`docs/superpowers/specs/2026-09-16-paradigm-tables-design.md`.
+`docs/superpowers/specs/2026-09-16-paradigm-tables-design.md`,
+`docs/superpowers/specs/2026-09-18-verb-prepositions-design.md`.
 
 ## Deploy
 

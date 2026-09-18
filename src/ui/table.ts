@@ -11,7 +11,7 @@ import {
   saveChoice,
   saveHistory,
 } from '../tables/logic';
-import { h } from './dom';
+import { de, h } from './dom';
 
 interface Cell {
   td: HTMLTableCellElement;
@@ -61,7 +61,7 @@ export function renderTablePanel(host: HTMLElement, storage: KeyValueStorage): v
     cells = new Map();
     const grid = h(
       'table',
-      { class: table.mode === 'word' ? 'paradigm-grid words' : 'paradigm-grid' },
+      { class: ['paradigm-grid', table.mode === 'word' && 'words', table.rows.some((r) => r.sub) && 'long-rows'].filter(Boolean).join(' ') },
       h('thead', null, h('tr', null, h('th', null, ''), ...table.cols.map((c) => h('th', { scope: 'col', title: c.title }, c.label)))),
       h(
         'tbody',
@@ -70,7 +70,7 @@ export function renderTablePanel(host: HTMLElement, storage: KeyValueStorage): v
           h(
             'tr',
             null,
-            h('th', { scope: 'row' }, r.label),
+            h('th', { scope: 'row' }, r.de ? de(r.label) : r.label, r.sub ? h('small', { class: 'row-sub' }, r.sub) : null),
             ...table.cols.map((c) => {
               const input = h('input', {
                 class: 'cell-input',

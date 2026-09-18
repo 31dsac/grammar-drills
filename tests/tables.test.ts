@@ -27,6 +27,12 @@ const REFERENCE: Record<string, string> = {
   pers:
     'mich mir mich mir  dich dir dich dir  ihn ihm sich sich  sie ihr sich sich  es ihm sich sich  ' +
     'uns uns uns uns  euch euch euch euch  sie ihnen sich sich  Sie Ihnen sich sich',
+  'vp-notes':
+    'um akk  von dat  an akk  an akk  in akk  bei dat  um akk  nach dat  auf akk  über akk  vor dat  ' +
+    'für akk  an dat  von dat  über akk  aus dat  mit dat  auf akk  für akk  von dat  nach dat',
+  'vp-core':
+    'an akk  für akk  um akk  über akk  an akk  auf akk  über akk  über akk  um akk  auf akk  ' +
+    'auf akk  auf akk  auf akk  von dat  mit dat  von dat  zu dat  zu dat  an dat  nach dat',
 };
 
 const table = (id: string) => findTable(id)!;
@@ -49,6 +55,16 @@ describe('catalog', () => {
       expect(gradeGrid(t, referenceAnswers(t)).score).toBe(cellCount(t));
     });
   }
+
+  it('verb tables: the gloss tells same-verb rows apart, case takes a / d and full names', () => {
+    const t = table('vp-notes');
+    expect(t.rows.find((r) => r.key === 'sich freuen|auf')?.sub).toBe('to look forward to');
+    expect(t.rows.find((r) => r.key === 'sich freuen|über')?.label).toBe('sich freuen');
+    const answers = { ...referenceAnswers(t), 'warten|auf|case': 'A', 'teilnehmen|an|case': 'Dativ', 'hören|von|case': 'akk' };
+    const wrong = gradeGrid(t, answers).cells.filter((c) => !c.correct);
+    expect(wrong.map((c) => [c.key, c.expected])).toEqual([['hören|von|case', 'dat']]);
+    expect(cellCount(table('vp-core'))).toBe(40);
+  });
 
   it('sizes: 4 × 4 paradigms, 9 × 4 pronouns', () => {
     expect(cellCount(table('rel'))).toBe(16);
